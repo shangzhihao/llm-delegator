@@ -29,6 +29,27 @@ def _parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument("--complexity", required=True, choices=("low", "medium"))
+    parser.add_argument(
+        "--accept",
+        action="append",
+        required=True,
+        dest="acceptance_criteria",
+        help="Acceptance criterion; repeat for multiple criteria",
+    )
+    parser.add_argument(
+        "--plan-step",
+        action="append",
+        default=[],
+        dest="plan",
+        help="Ordered plan step; required for medium complexity",
+    )
+    parser.add_argument(
+        "--constraint",
+        action="append",
+        default=[],
+        dest="constraints",
+        help="Task constraint; repeat for multiple constraints",
+    )
     parser.add_argument("--file", action="append", default=[], dest="files")
     parser.add_argument("--workspace-root")
     parser.add_argument("--context", default="")
@@ -58,6 +79,9 @@ async def _run(args: argparse.Namespace) -> int:
         task=args.task,
         task_kind=args.task_kind,
         complexity=args.complexity,
+        acceptance_criteria=tuple(args.acceptance_criteria),
+        plan=tuple(args.plan),
+        constraints=tuple(args.constraints),
         files=tuple(args.files),
         workspace_root=args.workspace_root,
         context=args.context,

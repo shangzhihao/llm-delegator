@@ -115,8 +115,13 @@ def _input(request: DelegationRequest, files: tuple[tuple[str, str], ...]) -> st
     parts = [
         f"TASK KIND\n{request.task_kind}",
         f"COMPLEXITY\n{request.complexity}",
-        f"TASK\n{request.task}",
+        f"DETAILED TASK\n{request.task}",
+        "ACCEPTANCE CRITERIA\n" + _numbered(request.acceptance_criteria),
     ]
+    if request.plan:
+        parts.append("ORDERED PLAN\n" + _numbered(request.plan))
+    if request.constraints:
+        parts.append("CONSTRAINTS\n" + _bulleted(request.constraints))
     if request.context:
         parts.append(f"CALLER CONTEXT\n{request.context}")
     if files:
@@ -125,6 +130,14 @@ def _input(request: DelegationRequest, files: tuple[tuple[str, str], ...]) -> st
             rendered.append(f'<file path="{name}">\n{content}\n</file>')
         parts.append("WORKSPACE FILES\n" + "\n\n".join(rendered))
     return "\n\n".join(parts)
+
+
+def _numbered(items: tuple[str, ...]) -> str:
+    return "\n".join(f"{index}. {item}" for index, item in enumerate(items, start=1))
+
+
+def _bulleted(items: tuple[str, ...]) -> str:
+    return "\n".join(f"- {item}" for item in items)
 
 
 def _final_text(body: dict[str, Any]) -> str:

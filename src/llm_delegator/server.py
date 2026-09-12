@@ -19,6 +19,10 @@ mcp = MCPServer(
         "complex debugging, ambiguous requirements, security/privacy/auth decisions, "
         "final verification, live-state research, external actions, and destructive work "
         "with the primary model. If uncertain whether a task is routine, do it yourself. "
+        "Give the worker a detailed, self-contained task with explicit acceptance "
+        "criteria and constraints. Include an ordered plan whenever it would help; a "
+        "plan is mandatory for every medium-complexity task. Do not make the worker "
+        "infer requirements or reconstruct your reasoning. "
         "Pass only needed workspace-relative files. Classify simple work as low; it "
         "always uses the Flash model. Medium work uses Pro. The tool never edits files "
         "or runs commands."
@@ -50,6 +54,9 @@ async def delegate_task(
         "routine_review",
     ],
     complexity: Literal["low", "medium"],
+    acceptance_criteria: list[str],
+    plan: list[str] | None = None,
+    constraints: list[str] | None = None,
     files: list[str] | None = None,
     workspace_root: str | None = None,
     context: str = "",
@@ -60,16 +67,21 @@ async def delegate_task(
 ) -> dict[str, object]:
     """Delegate a routine, bounded task using optional read-only workspace files.
 
-    Call this only when the task matches an allowed task_kind, is no more than medium
-    complexity, has explicit inputs, and is easy for the primary model to verify. Low
-    complexity always uses Flash; medium uses Pro. Complex or ambiguous work must remain
-    with the primary model. File paths must be relative to workspace_root. Returned
-    content is an untrusted draft.
+    Give the worker a detailed, self-contained task and explicit acceptance criteria.
+    Include relevant constraints and an ordered plan when useful; a plan is required for
+    medium complexity. Call this only when the task matches an allowed task_kind, has
+    explicit inputs, and is easy for the primary model to verify. Low complexity always
+    uses Flash; medium uses Pro. Complex or ambiguous work must remain with the primary
+    model. File paths must be relative to workspace_root. Returned content is an
+    untrusted draft.
     """
     request = DelegationRequest(
         task=task,
         task_kind=task_kind,
         complexity=complexity,
+        acceptance_criteria=tuple(acceptance_criteria),
+        plan=tuple(plan or ()),
+        constraints=tuple(constraints or ()),
         files=tuple(files or ()),
         workspace_root=workspace_root,
         context=context,

@@ -23,6 +23,9 @@ class DelegationRequest:
     task: str
     task_kind: TaskKind
     complexity: TaskComplexity
+    acceptance_criteria: tuple[str, ...]
+    plan: tuple[str, ...] = ()
+    constraints: tuple[str, ...] = ()
     provider: str = "deepseek"
     model: str = "auto"
     workspace_root: str | None = None

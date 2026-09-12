@@ -17,6 +17,23 @@ _ALLOWED_TASK_KINDS = {
 }
 
 
+def _validate_handoff_items(
+    name: str,
+    items: tuple[str, ...],
+    *,
+    required: bool,
+    maximum: int,
+) -> None:
+    if required and not items:
+        raise ValueError(f"{name} must contain at least one item")
+    if len(items) > maximum:
+        raise ValueError(f"{name} must not contain more than {maximum} items")
+    if any(not item.strip() for item in items):
+        raise ValueError(f"{name} must not contain blank items")
+    if any(len(item) > 2_000 for item in items):
+        raise ValueError(f"each {name} item must not exceed 2000 characters")
+
+
 class DelegationService:
     def __init__(
         self,
@@ -47,6 +64,18 @@ class DelegationService:
             raise ValueError(
                 "complexity must be low or medium; complex tasks stay with the primary model"
             )
+        _validate_handoff_items(
+            "acceptance_criteria",
+            request.acceptance_criteria,
+            required=True,
+            maximum=20,
+        )
+        _validate_handoff_items("plan", request.plan, required=False, maximum=30)
+        _validate_handoff_items(
+            "constraints", request.constraints, required=False, maximum=20
+        )
+        if request.complexity == "medium" and not request.plan:
+            raise ValueError("medium-complexity tasks require an ordered plan")
         if len(request.context) > self.settings.max_context_chars:
             raise ValueError(
                 f"context exceeds the {self.settings.max_context_chars}-character limit"

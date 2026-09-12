@@ -20,6 +20,8 @@ async def test_deepseek_adapter_uses_responses_api_and_returns_only_final_text(
         assert payload["model"] == "deepseek-v4-flash"
         assert payload["reasoning"] == {"effort": "low"}
         assert "selected.py" in payload["input"]
+        assert "ACCEPTANCE CRITERIA\n1. Identify the single issue." in payload["input"]
+        assert "CONSTRAINTS\n- Do not propose unrelated changes." in payload["input"]
         return httpx.Response(
             200,
             json={
@@ -46,9 +48,11 @@ async def test_deepseek_adapter_uses_responses_api_and_returns_only_final_text(
     provider = DeepSeekProvider(transport=httpx.MockTransport(handler))
     result = await provider.delegate(
         DelegationRequest(
-            task="Review",
+            task="Review the selected file for one concrete defect.",
             task_kind="routine_review",
             complexity="low",
+            acceptance_criteria=("Identify the single issue.",),
+            constraints=("Do not propose unrelated changes.",),
             model="pro",
         ),
         (("selected.py", "print('hello')\n"),),

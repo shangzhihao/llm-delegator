@@ -40,6 +40,17 @@ Model routing is automatic:
 - `medium` complexity uses the DeepSeek Pro alias by default.
 - High-complexity work cannot be submitted through the MCP schema.
 
+Every handoff must be self-contained. GPT supplies:
+
+- A detailed task describing the intended result
+- One or more explicit acceptance criteria
+- Relevant constraints
+- An ordered plan whenever it helps the worker; medium-complexity tasks cannot
+  run without one
+
+This keeps the worker from guessing missing requirements or reconstructing the
+primary model's reasoning.
+
 ## Install
 
 ```console
@@ -71,7 +82,9 @@ Codex can then call `delegate_task` while GPT remains the primary model.
 
 The MCP server advertises these operating instructions to the primary model:
 
-- Delegate bounded, high-volume analysis.
+- Delegate only bounded, routine, easy-to-verify work.
+- Write a detailed, self-contained task with acceptance criteria and constraints.
+- Supply an ordered plan for medium-complexity work and whenever it would help.
 - Select only the files needed for the task.
 - Treat the result as an untrusted draft and verify it.
 - Keep all edits and command execution with the primary model.
@@ -86,6 +99,8 @@ LLM_DELEGATOR_ALLOWED_ROOTS=/path/to/allowed/workspaces \
   "Summarize the provider interface" \
   --task-kind summarize \
   --complexity low \
+  --accept "Describe the interface contract and method signature" \
+  --constraint "Do not propose implementation changes" \
   --workspace-root /path/to/llm-delegator \
   --file src/llm_delegator/providers/base.py \
   --json
