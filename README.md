@@ -69,16 +69,19 @@ Edit `llm-delegator.toml` to control which models are active:
 ```toml
 [models]
 active = [
-    "deepseek-v4-flash",
-    "deepseek-v4-pro",
-    "z-ai/glm-5.3-flash",
-    "z-ai/glm-5.3",
+    { provider = "deepseek", model = "deepseek-v4-flash" },
+    { provider = "deepseek", model = "deepseek-v4-pro" },
+    { provider = "openrouter", model = "z-ai/glm-5.3-flash" },
+    { provider = "openrouter", model = "z-ai/glm-5.3" },
 ]
 ```
 
-Removing a model ID blocks it before an API request. Changes take effect on the
-next delegation. Set `LLM_DELEGATOR_CONFIG` to use a file at another path. If
-the default `llm-delegator.toml` is absent, models are unrestricted for backward
+Each active model is identified by both provider and provider-specific model
+ID. This keeps, for example, an OpenRouter-hosted GLM distinct from a future
+direct Z.ai-hosted GLM with the same model ID. Removing an entry blocks that
+provider/model pair before an API request. Changes take effect on the next
+delegation. Set `LLM_DELEGATOR_CONFIG` to use a file at another path. If the
+default `llm-delegator.toml` is absent, models are unrestricted for backward
 compatibility.
 
 ## Configure Codex

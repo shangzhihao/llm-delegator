@@ -1,2 +1,5 @@
 [models]
-active = ["z-ai/glm-5.3-flash", "z-ai/glm-5.3"]
+active = [
+    { provider = "openrouter", model = "z-ai/glm-5.3-flash" },
+    { provider = "openrouter", model = "z-ai/glm-5.3" },
+]

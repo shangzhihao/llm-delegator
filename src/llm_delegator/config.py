@@ -18,7 +18,10 @@ def _positive_int(name: str, default: int) -> int:
     return value
 
 
-def _active_models() -> frozenset[str] | None:
+ModelIdentity = tuple[str, str]
+
+
+def _active_models() -> frozenset[ModelIdentity] | None:
     configured_path = os.getenv("LLM_DELEGATOR_CONFIG")
     path = (
         Path(configured_path).expanduser() if configured_path else _DEFAULT_CONFIG_PATH
@@ -36,11 +39,27 @@ def _active_models() -> frozenset[str] | None:
 
     models = config.get("models")
     active = models.get("active") if isinstance(models, dict) else None
-    if not isinstance(active, list) or any(
-        not isinstance(model, str) or not model.strip() for model in active
-    ):
-        raise ValueError(f"{path} must define models.active as a list of model IDs")
-    return frozenset(active)
+    if not isinstance(active, list):
+        raise TypeError(
+            f"{path} must define models.active as a list of provider/model tables"
+        )
+
+    identities: set[ModelIdentity] = set()
+    for entry in active:
+        if not isinstance(entry, dict):
+            raise TypeError(
+                f"{path} must define models.active as a list of provider/model tables"
+            )
+        provider = entry.get("provider")
+        model = entry.get("model")
+        if not isinstance(provider, str) or not isinstance(model, str):
+            raise TypeError(f"{path} model provider and model values must be strings")
+        if not provider.strip() or not model.strip():
+            raise ValueError(
+                f"{path} model entries require non-empty provider and model strings"
+            )
+        identities.add((provider.strip(), model.strip()))
+    return frozenset(identities)
 
 
 @dataclass(frozen=True, slots=True)
@@ -50,7 +69,7 @@ class Settings:
     max_total_file_bytes: int
     max_context_chars: int
     request_timeout_seconds: float
-    active_models: frozenset[str] | None = None
+    active_models: frozenset[ModelIdentity] | None = None
 
     @classmethod
     def from_env(cls) -> "Settings":

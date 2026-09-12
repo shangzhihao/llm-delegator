@@ -89,7 +89,11 @@ def test_openrouter_adapter_rejects_inactive_model(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("OPENROUTER_API_KEY", "test-key")
-    provider = OpenRouterProvider(active_models=frozenset({"z-ai/glm-5.3"}))
+    provider = OpenRouterProvider(
+        active_models=frozenset({("z.ai", "z-ai/glm-5.3-flash")})
+    )
 
-    with pytest.raises(ValueError, match="Model is not active: z-ai/glm-5.3-flash"):
+    with pytest.raises(
+        ValueError, match="Model is not active: openrouter/z-ai/glm-5.3-flash"
+    ):
         provider._model_name("auto", "low")

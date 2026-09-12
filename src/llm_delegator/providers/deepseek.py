@@ -5,6 +5,7 @@ from typing import Any
 
 import httpx
 
+from llm_delegator.config import ModelIdentity
 from llm_delegator.models import DelegationRequest, DelegationResult
 from llm_delegator.providers.prompt import instructions, user_input
 
@@ -22,7 +23,7 @@ class DeepSeekProvider:
         *,
         timeout_seconds: float = 180,
         transport: httpx.AsyncBaseTransport | None = None,
-        active_models: frozenset[str] | None = None,
+        active_models: frozenset[ModelIdentity] | None = None,
     ) -> None:
         api_key = os.getenv("DEEPSEEK_API_KEY")
         if not api_key:
@@ -42,8 +43,15 @@ class DeepSeekProvider:
             requested = "pro"
         env_name = f"LLM_DELEGATOR_DEEPSEEK_MODEL_{requested.upper()}"
         model = os.getenv(env_name, _DEFAULT_MODELS.get(requested, requested))
-        if self._active_models is not None and model not in self._active_models:
-            raise ValueError(f"Model is not active: {model}")
+        if (
+            self._active_models is not None
+            and (
+                self.name,
+                model,
+            )
+            not in self._active_models
+        ):
+            raise ValueError(f"Model is not active: {self.name}/{model}")
         return model
 
     async def delegate(
