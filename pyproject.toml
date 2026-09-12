@@ -1,0 +1,28 @@
+[project]
+name = "llm-delegator"
+version = "0.1.0"
+description = "A provider-neutral MCP server and CLI for delegating bounded LLM tasks"
+readme = "README.md"
+authors = [
+    { name = "Shang Zhihao" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "httpx>=0.28.1",
+    "mcp[cli]>=2.2.0",
+]
+
+[project.scripts]
+llm-delegator = "llm_delegator.cli:main"
+llm-delegator-mcp = "llm_delegator.server:main"
+
+[build-system]
+requires = ["uv_build>=0.12.13,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "ruff>=0.16.7",
+]
