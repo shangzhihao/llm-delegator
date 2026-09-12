@@ -2,7 +2,7 @@
 
 from llm_delegator.config import Settings
 from llm_delegator.models import DelegationRequest, DelegationResult
-from llm_delegator.providers import DeepSeekProvider, ModelProvider
+from llm_delegator.providers import DeepSeekProvider, ModelProvider, OpenRouterProvider
 from llm_delegator.workspace import read_workspace_files, resolve_workspace_root
 
 _ALLOWED_TASK_KINDS = {
@@ -51,6 +51,10 @@ class DelegationService:
                 raise ValueError(f"Unknown provider: {name}") from error
         if name == "deepseek":
             return DeepSeekProvider(
+                timeout_seconds=self.settings.request_timeout_seconds
+            )
+        if name == "openrouter":
+            return OpenRouterProvider(
                 timeout_seconds=self.settings.request_timeout_seconds
             )
         raise ValueError(f"Unknown provider: {name}")

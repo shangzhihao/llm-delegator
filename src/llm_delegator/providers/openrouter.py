@@ -1,4 +1,4 @@
-"""DeepSeek Responses API adapter."""
+"""OpenRouter Chat Completions API adapter."""
 
 import os
 from typing import Any
@@ -9,13 +9,20 @@ from llm_delegator.models import DelegationRequest, DelegationResult
 from llm_delegator.providers.prompt import instructions, user_input
 
 _DEFAULT_MODELS = {
-    "flash": "deepseek-v4-flash",
-    "pro": "deepseek-v4-pro",
+    "flash": "z-ai/glm-5.3-flash",
+    "pro": "z-ai/glm-5.3",
+}
+_REASONING_EFFORTS = {
+    "none": "low",
+    "low": "low",
+    "medium": "high",
+    "high": "high",
+    "max": "max",
 }
 
 
-class DeepSeekProvider:
-    name = "deepseek"
+class OpenRouterProvider:
+    name = "openrouter"
 
     def __init__(
         self,
@@ -23,12 +30,12 @@ class DeepSeekProvider:
         timeout_seconds: float = 180,
         transport: httpx.AsyncBaseTransport | None = None,
     ) -> None:
-        api_key = os.getenv("DEEPSEEK_API_KEY")
+        api_key = os.getenv("OPENROUTER_API_KEY")
         if not api_key:
-            raise ValueError("DEEPSEEK_API_KEY is not set")
+            raise ValueError("OPENROUTER_API_KEY is not set")
         self._api_key = api_key
         self._base_url = os.getenv(
-            "LLM_DELEGATOR_DEEPSEEK_BASE_URL", "https://api.deepseek.com"
+            "LLM_DELEGATOR_OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"
         ).rstrip("/")
         self._timeout = timeout_seconds
         self._transport = transport
@@ -38,7 +45,7 @@ class DeepSeekProvider:
             requested = "flash"
         elif requested == "auto":
             requested = "pro"
-        env_name = f"LLM_DELEGATOR_DEEPSEEK_MODEL_{requested.upper()}"
+        env_name = f"LLM_DELEGATOR_OPENROUTER_MODEL_{requested.upper()}"
         return os.getenv(env_name, _DEFAULT_MODELS.get(requested, requested))
 
     async def delegate(
@@ -49,10 +56,12 @@ class DeepSeekProvider:
         model = self._model_name(request.model, request.complexity)
         payload = {
             "model": model,
-            "instructions": instructions(request.output_format),
-            "input": user_input(request, files),
-            "reasoning": {"effort": request.reasoning_effort},
-            "max_output_tokens": request.max_output_tokens,
+            "messages": [
+                {"role": "system", "content": instructions(request.output_format)},
+                {"role": "user", "content": user_input(request, files)},
+            ],
+            "reasoning": {"effort": _REASONING_EFFORTS[request.reasoning_effort]},
+            "max_tokens": request.max_output_tokens,
             "stream": False,
         }
         headers = {
@@ -63,30 +72,29 @@ class DeepSeekProvider:
             timeout=self._timeout, transport=self._transport
         ) as client:
             response = await client.post(
-                f"{self._base_url}/responses", headers=headers, json=payload
+                f"{self._base_url}/chat/completions", headers=headers, json=payload
             )
         try:
             response.raise_for_status()
         except httpx.HTTPStatusError as error:
             detail = _safe_error(response)
             raise RuntimeError(
-                f"DeepSeek API returned HTTP {response.status_code}: {detail}"
+                f"OpenRouter API returned HTTP {response.status_code}: {detail}"
             ) from error
 
         body = response.json()
-        if body.get("status") == "failed":
-            raise RuntimeError(
-                f"DeepSeek response failed: {body.get('error', 'unknown error')}"
-            )
         content = _final_text(body)
         if not content:
-            raise RuntimeError("DeepSeek response contained no final text")
+            raise RuntimeError("OpenRouter response contained no final text")
         usage = body.get("usage") if isinstance(body.get("usage"), dict) else {}
         normalized_usage = {
-            key: int(value)
-            for key, value in usage.items()
-            if key in {"input_tokens", "output_tokens", "total_tokens"}
-            and isinstance(value, int)
+            output_name: int(usage[input_name])
+            for input_name, output_name in {
+                "prompt_tokens": "input_tokens",
+                "completion_tokens": "output_tokens",
+                "total_tokens": "total_tokens",
+            }.items()
+            if isinstance(usage.get(input_name), int)
         }
         return DelegationResult(
             provider=self.name,
@@ -98,16 +106,14 @@ class DeepSeekProvider:
 
 
 def _final_text(body: dict[str, Any]) -> str:
-    chunks: list[str] = []
-    for item in body.get("output", []):
-        if not isinstance(item, dict) or item.get("type") != "message":
-            continue
-        for part in item.get("content", []):
-            if isinstance(part, dict) and part.get("type") == "output_text":
-                text = part.get("text")
-                if isinstance(text, str):
-                    chunks.append(text)
-    return "\n".join(chunks).strip()
+    choices = body.get("choices")
+    if not isinstance(choices, list) or not choices:
+        return ""
+    choice = choices[0]
+    if not isinstance(choice, dict) or not isinstance(choice.get("message"), dict):
+        return ""
+    content = choice["message"].get("content")
+    return content.strip() if isinstance(content, str) else ""
 
 
 def _safe_error(response: httpx.Response) -> str:

@@ -24,8 +24,10 @@ mcp = MCPServer(
         "plan is mandatory for every medium-complexity task. Do not make the worker "
         "infer requirements or reconstruct your reasoning. "
         "Pass only needed workspace-relative files. Classify simple work as low; it "
-        "always uses the Flash model. Medium work uses Pro. The tool never edits files "
-        "or runs commands."
+        "always uses the selected provider's Flash model. Medium work uses Pro. The "
+        "default provider is deepseek; set provider to openrouter to use GLM 5.3 Flash "
+        "for low complexity or GLM 5.3 for medium complexity. The tool never edits "
+        "files or runs commands."
     ),
 )
 
@@ -71,9 +73,10 @@ async def delegate_task(
     Include relevant constraints and an ordered plan when useful; a plan is required for
     medium complexity. Call this only when the task matches an allowed task_kind, has
     explicit inputs, and is easy for the primary model to verify. Low complexity always
-    uses Flash; medium uses Pro. Complex or ambiguous work must remain with the primary
-    model. File paths must be relative to workspace_root. Returned content is an
-    untrusted draft.
+    uses the selected provider's Flash model; medium uses Pro. Set provider to
+    ``openrouter`` for GLM 5.3 Flash or GLM 5.3. Complex or ambiguous work must remain
+    with the primary model. File paths must be relative to workspace_root. Returned
+    content is an untrusted draft.
     """
     request = DelegationRequest(
         task=task,

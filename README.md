@@ -4,9 +4,8 @@ LLM Delegator lets a primary agent such as GPT delegate bounded work to another
 LLM through one read-only MCP tool. The primary agent remains responsible for
 planning, verification, commands, and file changes.
 
-The first provider adapter uses DeepSeek's Responses API. The provider boundary
-is intentionally small so additional providers can be added without changing
-the MCP interface.
+Provider adapters support DeepSeek's Responses API and OpenRouter's Chat
+Completions API without changing the MCP interface.
 
 ## Capabilities
 
@@ -36,8 +35,9 @@ uncertain whether a task is routine, it should keep the task.
 
 Model routing is automatic:
 
-- `low` complexity always uses the DeepSeek Flash alias.
-- `medium` complexity uses the DeepSeek Pro alias by default.
+- `low` complexity always uses the selected provider's Flash alias.
+- `medium` complexity uses the selected provider's Pro alias by default.
+- OpenRouter maps those aliases to `z-ai/glm-5.3-flash` and `z-ai/glm-5.3`.
 - High-complexity work cannot be submitted through the MCP schema.
 
 Every handoff must be self-contained. GPT supplies:
@@ -59,7 +59,8 @@ cd llm-delegator
 uv sync
 ```
 
-The DeepSeek adapter reads `DEEPSEEK_API_KEY` from its environment.
+The DeepSeek adapter reads `DEEPSEEK_API_KEY`; the OpenRouter adapter reads
+`OPENROUTER_API_KEY`.
 
 ## Configure Codex
 
@@ -69,7 +70,7 @@ Add this to `~/.codex/config.toml`:
 [mcp_servers.llm-delegator]
 command = "/absolute/path/to/llm-delegator/.venv/bin/llm-delegator-mcp"
 cwd = "/absolute/path/to/llm-delegator"
-env_vars = ["DEEPSEEK_API_KEY"]
+env_vars = ["DEEPSEEK_API_KEY", "OPENROUTER_API_KEY"]
 enabled_tools = ["delegate_task"]
 tool_timeout_sec = 240
 
@@ -108,7 +109,9 @@ LLM_DELEGATOR_ALLOWED_ROOTS=/path/to/allowed/workspaces \
 
 The CLI defaults to automatic model routing. It also accepts a provider model
 alias or full model ID for direct adapter testing, but low-complexity work is
-always forced to Flash.
+always forced to Flash. Pass `--provider openrouter` to use GLM 5.3 or GLM 5.3
+Flash through OpenRouter. These models require reasoning and accept only `low`,
+`high`, or `max`; the adapter maps `none` to `low` and `medium` to `high`.
 
 ## Configuration
 
@@ -122,6 +125,9 @@ always forced to Flash.
 | `LLM_DELEGATOR_DEEPSEEK_BASE_URL` | `https://api.deepseek.com` |
 | `LLM_DELEGATOR_DEEPSEEK_MODEL_FLASH` | `deepseek-v4-flash` |
 | `LLM_DELEGATOR_DEEPSEEK_MODEL_PRO` | `deepseek-v4-pro` |
+| `LLM_DELEGATOR_OPENROUTER_BASE_URL` | `https://openrouter.ai/api/v1` |
+| `LLM_DELEGATOR_OPENROUTER_MODEL_FLASH` | `z-ai/glm-5.3-flash` |
+| `LLM_DELEGATOR_OPENROUTER_MODEL_PRO` | `z-ai/glm-5.3` |
 
 Separate multiple allowed roots with the platform path separator (`:` on
 macOS and Linux). Selected files must be UTF-8 text files and must be relative
