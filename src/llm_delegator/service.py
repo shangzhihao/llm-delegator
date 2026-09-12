@@ -51,11 +51,13 @@ class DelegationService:
                 raise ValueError(f"Unknown provider: {name}") from error
         if name == "deepseek":
             return DeepSeekProvider(
-                timeout_seconds=self.settings.request_timeout_seconds
+                timeout_seconds=self.settings.request_timeout_seconds,
+                active_models=self.settings.active_models,
             )
         if name == "openrouter":
             return OpenRouterProvider(
-                timeout_seconds=self.settings.request_timeout_seconds
+                timeout_seconds=self.settings.request_timeout_seconds,
+                active_models=self.settings.active_models,
             )
         raise ValueError(f"Unknown provider: {name}")
 

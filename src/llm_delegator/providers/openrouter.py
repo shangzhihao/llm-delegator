@@ -29,6 +29,7 @@ class OpenRouterProvider:
         *,
         timeout_seconds: float = 180,
         transport: httpx.AsyncBaseTransport | None = None,
+        active_models: frozenset[str] | None = None,
     ) -> None:
         api_key = os.getenv("OPENROUTER_API_KEY")
         if not api_key:
@@ -39,6 +40,7 @@ class OpenRouterProvider:
         ).rstrip("/")
         self._timeout = timeout_seconds
         self._transport = transport
+        self._active_models = active_models
 
     def _model_name(self, requested: str, complexity: str) -> str:
         if complexity == "low":
@@ -46,7 +48,10 @@ class OpenRouterProvider:
         elif requested == "auto":
             requested = "pro"
         env_name = f"LLM_DELEGATOR_OPENROUTER_MODEL_{requested.upper()}"
-        return os.getenv(env_name, _DEFAULT_MODELS.get(requested, requested))
+        model = os.getenv(env_name, _DEFAULT_MODELS.get(requested, requested))
+        if self._active_models is not None and model not in self._active_models:
+            raise ValueError(f"Model is not active: {model}")
+        return model
 
     async def delegate(
         self,

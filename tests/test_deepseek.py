@@ -65,3 +65,13 @@ async def test_deepseek_adapter_uses_responses_api_and_returns_only_final_text(
         "output_tokens": 5,
         "total_tokens": 15,
     }
+
+
+def test_deepseek_adapter_rejects_inactive_model(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "test-key")
+    provider = DeepSeekProvider(active_models=frozenset({"deepseek-v4-pro"}))
+
+    with pytest.raises(ValueError, match="Model is not active: deepseek-v4-flash"):
+        provider._model_name("auto", "low")

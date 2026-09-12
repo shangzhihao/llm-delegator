@@ -62,6 +62,25 @@ uv sync
 The DeepSeek adapter reads `DEEPSEEK_API_KEY`; the OpenRouter adapter reads
 `OPENROUTER_API_KEY`.
 
+## Model configuration
+
+Edit `llm-delegator.toml` to control which models are active:
+
+```toml
+[models]
+active = [
+    "deepseek-v4-flash",
+    "deepseek-v4-pro",
+    "z-ai/glm-5.3-flash",
+    "z-ai/glm-5.3",
+]
+```
+
+Removing a model ID blocks it before an API request. Changes take effect on the
+next delegation. Set `LLM_DELEGATOR_CONFIG` to use a file at another path. If
+the default `llm-delegator.toml` is absent, models are unrestricted for backward
+compatibility.
+
 ## Configure Codex
 
 Add this to `~/.codex/config.toml`:
@@ -118,6 +137,7 @@ Flash through OpenRouter. These models require reasoning and accept only `low`,
 | Environment variable | Default |
 | --- | --- |
 | `LLM_DELEGATOR_ALLOWED_ROOTS` | MCP process working directory |
+| `LLM_DELEGATOR_CONFIG` | `./llm-delegator.toml` |
 | `LLM_DELEGATOR_MAX_FILE_BYTES` | `1000000` |
 | `LLM_DELEGATOR_MAX_TOTAL_FILE_BYTES` | `4000000` |
 | `LLM_DELEGATOR_MAX_CONTEXT_CHARS` | `100000` |

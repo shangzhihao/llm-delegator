@@ -1,8 +1,11 @@
 """Environment-backed configuration."""
 
 import os
+import tomllib
 from dataclasses import dataclass
 from pathlib import Path
+
+_DEFAULT_CONFIG_PATH = Path("llm-delegator.toml")
 
 
 def _positive_int(name: str, default: int) -> int:
@@ -15,6 +18,31 @@ def _positive_int(name: str, default: int) -> int:
     return value
 
 
+def _active_models() -> frozenset[str] | None:
+    configured_path = os.getenv("LLM_DELEGATOR_CONFIG")
+    path = (
+        Path(configured_path).expanduser() if configured_path else _DEFAULT_CONFIG_PATH
+    )
+    if not path.is_file():
+        if configured_path:
+            raise ValueError(f"LLM_DELEGATOR_CONFIG does not exist: {path}")
+        return None
+
+    try:
+        with path.open("rb") as config_file:
+            config = tomllib.load(config_file)
+    except tomllib.TOMLDecodeError as error:
+        raise ValueError(f"invalid TOML in {path}: {error}") from error
+
+    models = config.get("models")
+    active = models.get("active") if isinstance(models, dict) else None
+    if not isinstance(active, list) or any(
+        not isinstance(model, str) or not model.strip() for model in active
+    ):
+        raise ValueError(f"{path} must define models.active as a list of model IDs")
+    return frozenset(active)
+
+
 @dataclass(frozen=True, slots=True)
 class Settings:
     allowed_roots: tuple[Path, ...]
@@ -22,6 +50,7 @@ class Settings:
     max_total_file_bytes: int
     max_context_chars: int
     request_timeout_seconds: float
+    active_models: frozenset[str] | None = None
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -42,4 +71,5 @@ class Settings:
             request_timeout_seconds=float(
                 os.getenv("LLM_DELEGATOR_REQUEST_TIMEOUT_SECONDS", "180")
             ),
+            active_models=_active_models(),
         )
