@@ -18,7 +18,7 @@ async def test_deepseek_adapter_uses_responses_api_and_returns_only_final_text(
         assert request.headers["Authorization"] == "Bearer test-key"
         payload = json.loads(request.content)
         assert payload["model"] == "deepseek-v4-flash"
-        assert payload["reasoning"] == {"effort": "high"}
+        assert payload["reasoning"] == {"effort": "low"}
         assert "selected.py" in payload["input"]
         return httpx.Response(
             200,
@@ -45,7 +45,12 @@ async def test_deepseek_adapter_uses_responses_api_and_returns_only_final_text(
 
     provider = DeepSeekProvider(transport=httpx.MockTransport(handler))
     result = await provider.delegate(
-        DelegationRequest(task="Review", model="flash"),
+        DelegationRequest(
+            task="Review",
+            task_kind="routine_review",
+            complexity="low",
+            model="pro",
+        ),
         (("selected.py", "print('hello')\n"),),
     )
 

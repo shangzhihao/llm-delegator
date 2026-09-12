@@ -5,6 +5,17 @@ from llm_delegator.models import DelegationRequest, DelegationResult
 from llm_delegator.providers import DeepSeekProvider, ModelProvider
 from llm_delegator.workspace import read_workspace_files, resolve_workspace_root
 
+_ALLOWED_TASK_KINDS = {
+    "summarize",
+    "extract",
+    "classify",
+    "routine_transform",
+    "draft_documentation",
+    "draft_tests",
+    "routine_code_draft",
+    "routine_review",
+}
+
 
 class DelegationService:
     def __init__(
@@ -30,14 +41,20 @@ class DelegationService:
     async def delegate(self, request: DelegationRequest) -> DelegationResult:
         if not request.task.strip():
             raise ValueError("task must not be empty")
+        if request.task_kind not in _ALLOWED_TASK_KINDS:
+            raise ValueError(f"unsupported task_kind: {request.task_kind}")
+        if request.complexity not in {"low", "medium"}:
+            raise ValueError(
+                "complexity must be low or medium; complex tasks stay with the primary model"
+            )
         if len(request.context) > self.settings.max_context_chars:
             raise ValueError(
                 f"context exceeds the {self.settings.max_context_chars}-character limit"
             )
         if request.max_output_tokens <= 0:
             raise ValueError("max_output_tokens must be positive")
-        if request.max_output_tokens > 100_000:
-            raise ValueError("max_output_tokens must not exceed 100000")
+        if request.max_output_tokens > 16_000:
+            raise ValueError("max_output_tokens must not exceed 16000")
 
         root = resolve_workspace_root(request.workspace_root, self.settings)
         files = read_workspace_files(root, request.files, self.settings)

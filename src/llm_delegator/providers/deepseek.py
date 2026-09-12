@@ -32,7 +32,11 @@ class DeepSeekProvider:
         self._timeout = timeout_seconds
         self._transport = transport
 
-    def _model_name(self, requested: str) -> str:
+    def _model_name(self, requested: str, complexity: str) -> str:
+        if complexity == "low":
+            requested = "flash"
+        elif requested == "auto":
+            requested = "pro"
         env_name = f"LLM_DELEGATOR_DEEPSEEK_MODEL_{requested.upper()}"
         return os.getenv(env_name, _DEFAULT_MODELS.get(requested, requested))
 
@@ -41,7 +45,7 @@ class DeepSeekProvider:
         request: DelegationRequest,
         files: tuple[tuple[str, str], ...],
     ) -> DelegationResult:
-        model = self._model_name(request.model)
+        model = self._model_name(request.model, request.complexity)
         payload = {
             "model": model,
             "instructions": _instructions(request.output_format),
@@ -108,7 +112,11 @@ def _instructions(output_format: str) -> str:
 
 
 def _input(request: DelegationRequest, files: tuple[tuple[str, str], ...]) -> str:
-    parts = [f"TASK\n{request.task}"]
+    parts = [
+        f"TASK KIND\n{request.task_kind}",
+        f"COMPLEXITY\n{request.complexity}",
+        f"TASK\n{request.task}",
+    ]
     if request.context:
         parts.append(f"CALLER CONTEXT\n{request.context}")
     if files:

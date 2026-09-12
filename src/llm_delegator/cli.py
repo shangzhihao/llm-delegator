@@ -14,11 +14,30 @@ def _parser() -> argparse.ArgumentParser:
         prog="llm-delegator", description="Delegate a bounded task to an LLM provider"
     )
     parser.add_argument("task")
+    parser.add_argument(
+        "--task-kind",
+        required=True,
+        choices=(
+            "summarize",
+            "extract",
+            "classify",
+            "routine_transform",
+            "draft_documentation",
+            "draft_tests",
+            "routine_code_draft",
+            "routine_review",
+        ),
+    )
+    parser.add_argument("--complexity", required=True, choices=("low", "medium"))
     parser.add_argument("--file", action="append", default=[], dest="files")
     parser.add_argument("--workspace-root")
     parser.add_argument("--context", default="")
     parser.add_argument("--provider", default="deepseek")
-    parser.add_argument("--model", default="flash")
+    parser.add_argument(
+        "--model",
+        default="auto",
+        help="Model alias or ID; low-complexity tasks always use flash",
+    )
     parser.add_argument(
         "--output-format",
         choices=("text", "markdown", "json", "patch"),
@@ -27,7 +46,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--reasoning-effort",
         choices=("none", "low", "medium", "high", "max"),
-        default="high",
+        default="low",
     )
     parser.add_argument("--max-output-tokens", type=int, default=4_000)
     parser.add_argument("--json", action="store_true", dest="as_json")
@@ -37,6 +56,8 @@ def _parser() -> argparse.ArgumentParser:
 async def _run(args: argparse.Namespace) -> int:
     request = DelegationRequest(
         task=args.task,
+        task_kind=args.task_kind,
+        complexity=args.complexity,
         files=tuple(args.files),
         workspace_root=args.workspace_root,
         context=args.context,

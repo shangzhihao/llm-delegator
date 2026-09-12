@@ -19,6 +19,27 @@ the MCP interface.
 - Token usage returned with every successful result
 - No filesystem writes or command execution
 
+## Delegation policy
+
+The MCP tool accepts only explicit `low` or `medium` complexity classifications.
+GPT should delegate only routine work that is bounded and easy to verify:
+
+- Summarization, extraction, and classification
+- Mechanical content or data transformations
+- First drafts of documentation or tests
+- Routine code drafts and routine reviews
+
+GPT retains architecture and system design, complex debugging, ambiguous
+requirements, security/privacy/auth decisions, final verification, live-state
+research, external actions, and destructive work. If the primary model is
+uncertain whether a task is routine, it should keep the task.
+
+Model routing is automatic:
+
+- `low` complexity always uses the DeepSeek Flash alias.
+- `medium` complexity uses the DeepSeek Pro alias by default.
+- High-complexity work cannot be submitted through the MCP schema.
+
 ## Install
 
 ```console
@@ -63,14 +84,16 @@ The CLI exercises the same service and provider adapter as MCP:
 LLM_DELEGATOR_ALLOWED_ROOTS=/path/to/allowed/workspaces \
   uv run llm-delegator \
   "Summarize the provider interface" \
+  --task-kind summarize \
+  --complexity low \
   --workspace-root /path/to/llm-delegator \
   --file src/llm_delegator/providers/base.py \
-  --model flash \
   --json
 ```
 
-Use `--model pro` for harder tasks. A full provider model ID can be passed in
-place of an alias.
+The CLI defaults to automatic model routing. It also accepts a provider model
+alias or full model ID for direct adapter testing, but low-complexity work is
+always forced to Flash.
 
 ## Configuration
 
