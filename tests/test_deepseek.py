@@ -18,7 +18,7 @@ async def test_deepseek_adapter_uses_responses_api_and_returns_only_final_text(
         assert request.headers["Authorization"] == "Bearer test-key"
         payload = json.loads(request.content)
         assert payload["model"] == "deepseek-v4-flash"
-        assert payload["reasoning"] == {"effort": "low"}
+        assert payload["reasoning"] == {"effort": "high"}
         assert "selected.py" in payload["input"]
         assert "ACCEPTANCE CRITERIA\n1. Identify the single issue." in payload["input"]
         assert "CONSTRAINTS\n- Do not propose unrelated changes." in payload["input"]

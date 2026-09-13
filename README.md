@@ -134,6 +134,7 @@ alias or full model ID for direct adapter testing, but low-complexity work is
 always forced to Flash. Pass `--provider openrouter` to use GLM 5.3 or GLM 5.3
 Flash through OpenRouter. These models require reasoning and accept only `low`,
 `high`, or `max`; the adapter maps `none` to `low` and `medium` to `high`.
+Reasoning effort defaults to `high` for MCP, CLI, and programmatic requests.
 
 ## Configuration
 

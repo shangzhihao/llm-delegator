@@ -67,7 +67,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--reasoning-effort",
         choices=("none", "low", "medium", "high", "max"),
-        default="low",
+        default="high",
     )
     parser.add_argument("--max-output-tokens", type=int, default=4_000)
     parser.add_argument("--json", action="store_true", dest="as_json")

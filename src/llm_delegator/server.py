@@ -64,7 +64,7 @@ async def delegate_task(
     context: str = "",
     provider: str = "deepseek",
     output_format: Literal["text", "markdown", "json", "patch"] = "text",
-    reasoning_effort: Literal["none", "low", "medium", "high", "max"] = "low",
+    reasoning_effort: Literal["none", "low", "medium", "high", "max"] = "high",
     max_output_tokens: int = 4_000,
 ) -> dict[str, object]:
     """Delegate a routine, bounded task using optional read-only workspace files.

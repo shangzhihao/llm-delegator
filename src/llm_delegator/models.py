@@ -32,7 +32,7 @@ class DelegationRequest:
     files: tuple[str, ...] = ()
     context: str = ""
     output_format: OutputFormat = "text"
-    reasoning_effort: ReasoningEffort = "low"
+    reasoning_effort: ReasoningEffort = "high"
     max_output_tokens: int = 4_000
 
 
